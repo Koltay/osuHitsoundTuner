@@ -1,0 +1,659 @@
+﻿<Window x:Class="OsuHitsoundTuner.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="OsuHitsoundTuner"
+        Width="1280"
+        Height="800"
+        MinWidth="1024"
+        MinHeight="640"
+        Background="#FF0E0A1F"
+        FontFamily="Segoe UI"
+        FontSize="14">
+    <Window.Resources>
+        <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF120B2F" Offset="0" />
+            <GradientStop Color="#FF1B1748" Offset="0.45" />
+            <GradientStop Color="#FF0C5C8E" Offset="1" />
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#CC191335" />
+        <SolidColorBrush x:Key="SurfaceSecondaryBrush" Color="#D4231A4A" />
+        <SolidColorBrush x:Key="OutlineBrush" Color="#1AFFFFFF" />
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFFF4FA3" />
+        <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#FFFF75B7" />
+        <SolidColorBrush x:Key="SecondaryBrush" Color="#FF2C8FFF" />
+        <SolidColorBrush x:Key="SecondaryHoverBrush" Color="#FF56A7FF" />
+        <SolidColorBrush x:Key="TextBrush" Color="#FFF6F7FF" />
+        <SolidColorBrush x:Key="SubtleTextBrush" Color="#FFB8BEDD" />
+        <SolidColorBrush x:Key="SuccessBrush" Color="#FF6DFFB4" />
+        <SolidColorBrush x:Key="DangerBrush" Color="#FFFF6B7A" />
+        <SolidColorBrush x:Key="WarningBrush" Color="#FFFFD166" />
+
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Padding" Value="18" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="BorderThickness" Value="0.5" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="#FF1A1438" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="MinWidth" Value="118" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource PrimaryHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#FF2A396E" />
+            <Setter Property="Foreground" Value="#FFF8FAFF" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="#6694B6FF"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#FF3A4F91" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="BorderThickness" Value="0.5" />
+            <Setter Property="Background" Value="#3AFFFFFF" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
+            <Setter Property="SelectionBrush" Value="#99FF4FA3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="TextBoxBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="#66FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TextBoxBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="BorderThickness" Value="0.5" />
+            <Setter Property="Background" Value="#3AFFFFFF" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="ComboBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter x:Name="ContentSite"
+                                                      Margin="10,0,8,0"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Left"
+                                                      IsHitTestVisible="False"
+                                                      Content="{TemplateBinding SelectedItem}"
+                                                      ContentTemplate="{TemplateBinding ItemTemplate}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                      ContentStringFormat="{TemplateBinding ItemStringFormat}" />
+                                    <ToggleButton Grid.ColumnSpan="2"
+                                                  Focusable="False"
+                                                  IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                                  ClickMode="Press"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  HorizontalContentAlignment="Right"
+                                                  Padding="0,0,12,0">
+                                        <Path Data="M 0 0 L 5 5 L 10 0"
+                                              Stroke="{StaticResource TextBrush}"
+                                              StrokeThickness="1.8"
+                                              IsHitTestVisible="False"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                                    </ToggleButton>
+                                </Grid>
+                            </Border>
+
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border x:Name="DropDownBorder"
+                                        Margin="0,4,0,0"
+                                        Background="#FF1E1744"
+                                        BorderBrush="{StaticResource OutlineBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ScrollViewer Margin="2"
+                                                  SnapsToDevicePixels="True"
+                                                  MaxHeight="380">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ComboBorder" Property="Background" Value="#4AFFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="ComboBorder" Property="Background" Value="#55FFFFFF" />
+                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="#44FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ComboBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Margin="2,1"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#44378BFF" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#55FF4FA3" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="#44378BFF" />
+                    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#55FF4FA3" />
+                    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid ClipToBounds="True" KeyboardNavigation.TabNavigation="Local">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TabPanel x:Name="HeaderPanel"
+                                      Grid.Row="0"
+                                      Margin="0,0,0,8"
+                                      IsItemsHost="True"
+                                      Background="Transparent" />
+
+                            <Border Grid.Row="1"
+                                    Background="#221A1240"
+                                    BorderBrush="{StaticResource OutlineBrush}"
+                                    BorderThickness="0.5"
+                                    CornerRadius="12"
+                                    Padding="8">
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  ContentSource="SelectedContent"
+                                                  Margin="0" />
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="#33261F4F" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="BorderThickness" Value="0.5" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Margin="0,0,8,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#66443388" />
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#66FFFFFF" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#44378BFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TabBorder" Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#66443388" />
+                    <Setter Property="BorderBrush" Value="#44FFFFFF" />
+                    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="#221A1240" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource OutlineBrush}" />
+            <Setter Property="BorderThickness" Value="0.5" />
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="8,6" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#55FF4FA3" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#44378BFF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="20" Background="{StaticResource WindowBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="Osu Hitsound Tuner"
+                       FontSize="28"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextBrush}" />
+            <TextBlock Text="osu! Standard Hitsound Cleanup"
+                       Margin="0,4,0,0"
+                       Foreground="{StaticResource SubtleTextBrush}" />
+        </StackPanel>
+
+        <TabControl Grid.Row="1" x:Name="RootTabControl" Background="Transparent" BorderThickness="0">
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Main" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" />
+                </TabItem.Header>
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="osu! Skin Folder"
+                                       FontWeight="SemiBold"
+                                       FontSize="15"
+                                       Foreground="{StaticResource TextBrush}" />
+                            <TextBox x:Name="SkinRootTextBox"
+                                     Margin="0,12,0,10"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="Path to osu! Skins folder" />
+                            <WrapPanel>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Browse"
+                                        Click="BrowseRoot_Click" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Skin"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <ComboBox Grid.Column="1"
+                                          x:Name="SkinComboBox"
+                                          MinWidth="300"
+                                          SelectionChanged="SkinComboBox_SelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayLabel}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+
+                            <WrapPanel Grid.Row="1" VerticalAlignment="Center">
+                                <TextBlock Text="Hitsound"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,8"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <ComboBox x:Name="HitsoundComboBox"
+                                          MinWidth="300"
+                                          Margin="0,0,8,8"
+                                          SelectionChanged="HitsoundComboBox_SelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        MinWidth="82"
+                                        Content="Prev"
+                                        Click="PrevHitsound_Click" />
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        MinWidth="82"
+                                        Content="Next"
+                                        Click="NextHitsound_Click" />
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="&#x25B6; Play"
+                                        MinWidth="110"
+                                        Click="PlayOriginal_Click" />
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="&#x25B6; Play Selected"
+                                    MinWidth="120"
+                                    Click="PlaySelected_Click" />
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Check Again"
+                                        MinWidth="120"
+                                        Click="CheckAgain_Click" />
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Open Skin Folder"
+                                        MinWidth="150"
+                                        Click="OpenSkinFolder_Click" />
+                            </WrapPanel>
+
+                            <TextBlock Grid.Row="2"
+                                       x:Name="StatusTextBlock"
+                                       Margin="0,2,0,0"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource SubtleTextBrush}"
+                                       Text="Ready"
+                                       TextWrapping="Wrap" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2" Style="{StaticResource CardBorderStyle}" Margin="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Border Background="#DD090614"
+                                    CornerRadius="10"
+                                    Padding="8"
+                                    Margin="0,0,0,12"
+                                    ClipToBounds="True">
+                                <Canvas x:Name="WaveformCanvas"
+                                        Height="260"
+                                        Background="#FF100A22"
+                                        ClipToBounds="True"
+                                        SizeChanged="WaveformCanvas_SizeChanged"
+                                        MouseLeftButtonDown="WaveformCanvas_MouseLeftButtonDown"
+                                        MouseMove="WaveformCanvas_MouseMove"
+                                        MouseLeftButtonUp="WaveformCanvas_MouseLeftButtonUp" />
+                            </Border>
+
+                            <TextBlock Grid.Row="1"
+                                       x:Name="TrimAnalysisTextBlock"
+                                       Margin="0,0,0,12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource SuccessBrush}"
+                                       Text="Load a hitsound to analyze trim readiness."
+                                       TextWrapping="Wrap" />
+
+                            <StackPanel Grid.Row="2" Margin="0,0,0,10" Visibility="Collapsed">
+                                <Slider x:Name="StartSlider"
+                                        Margin="0,0,0,10"
+                                        Minimum="0"
+                                        Maximum="1"
+                                        ValueChanged="TrimSlider_ValueChanged" />
+                                <Slider x:Name="EndSlider"
+                                        Minimum="0"
+                                        Maximum="1"
+                                        Value="1"
+                                        ValueChanged="TrimSlider_ValueChanged" />
+                            </StackPanel>
+
+                            <WrapPanel Grid.Row="3">
+                                <Button Content="Preview Changes" Click="PreviewTrimmed_Click" />
+                                <Button Content="Save Trimmed WAV" Click="SaveTrimmed_Click" />
+                                <Button Content="Remove Leading Silence" Click="RemoveSilence_Click" />
+                                <Button x:Name="ReplaceEmptyAudioButton"
+                                        Content="Replace as Empty Audio"
+                                        IsEnabled="False"
+                                        Click="ReplaceAsEmptyAudio_Click" />
+                                <Button Content="Convert All to WAV" Click="ConvertToWav_Click" />
+                            </WrapPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Skin Analysis" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" Margin="0,0,8,0" />
+                        <Border x:Name="AnalysisBadge"
+                                Grid.Column="1"
+                                Visibility="Collapsed"
+                                Background="#FFE53935"
+                                CornerRadius="8"
+                                Padding="4,1"
+                                VerticalAlignment="Center">
+                            <TextBlock x:Name="AnalysisBadgeText" Foreground="White" FontWeight="Bold" FontSize="11" Text="0" />
+                        </Border>
+                    </Grid>
+                </TabItem.Header>
+
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border x:Name="AnalysisActionPopup"
+                            Grid.Row="0"
+                            HorizontalAlignment="Right"
+                            Visibility="Collapsed"
+                            Background="#FFE53935"
+                            CornerRadius="10"
+                            Padding="10,6"
+                            MaxWidth="420"
+                            Margin="0,0,0,10">
+                        <TextBlock x:Name="AnalysisActionPopupText"
+                                   Foreground="White"
+                                   FontWeight="Bold"
+                                   TextWrapping="Wrap"
+                                   Text="Action required" />
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="Perfect (No changes required)"
+                                           Foreground="{StaticResource SuccessBrush}"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,10" />
+                                <ListBox x:Name="PerfectListBox"
+                                         Height="420"
+                                         DisplayMemberPath="Label"
+                                         MouseDoubleClick="AnalysisIssue_DoubleClick" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}" Margin="8,0">
+                            <StackPanel>
+                                <TextBlock Text="Recommended (WAV files)"
+                                           Foreground="{StaticResource WarningBrush}"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,10" />
+                                <ListBox x:Name="RecommendedListBox"
+                                         Height="420"
+                                         DisplayMemberPath="Label"
+                                         MouseDoubleClick="AnalysisIssue_DoubleClick" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Margin="8,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Warning (Needs trimming)"
+                                           Foreground="{StaticResource DangerBrush}"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,10" />
+                                <ListBox x:Name="WarningListBox"
+                                         Height="420"
+                                         DisplayMemberPath="Label"
+                                         MouseDoubleClick="AnalysisIssue_DoubleClick" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <TextBlock Grid.Row="2"
+                   Margin="0,12,0,0"
+                   Foreground="{StaticResource SubtleTextBrush}"
+                   TextWrapping="Wrap"
+                   Text="Supported input formats: .wav, .ogg, .mp3. Waveform display is downsampled for speed and editing uses full sample data." />
+    </Grid>
+</ScrollViewer>
+</Window>
