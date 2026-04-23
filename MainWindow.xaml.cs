@@ -19,11 +19,13 @@ namespace OsuHitsoundTuner;
 
 public partial class MainWindow : Window
 {
-    private const float SilenceThreshold = 0.01f;
+    private const float LeadingTrimAbsoluteFloor = 0.0015f;
+    private const float LeadingTrimRelativePeakFactor = 0.12f;
     private const float NearSilentPeakThreshold = 0.0035f;
     private const double StartAudioWindowSeconds = 0.005;
     private const double ShortClipThresholdSeconds = 1.0;
     private const double ShortClipLeadInSeconds = 0.15;
+    private const double RangeHandleGrabPixels = 18;
 
     private static readonly string[] SupportedExtensions = [".wav", ".ogg", ".mp3"];
 
@@ -59,13 +61,22 @@ public partial class MainWindow : Window
     private WaveOutEvent? _playbackOutput;
     private WaveStream? _playbackStream;
     private readonly List<string> _playbackTempPaths = [];
+    private float _playbackVolume = 1.0f;
     private bool _isDraggingSelection;
     private double _dragStartX;
+    private DragSelectionMode _dragSelectionMode;
 
     public MainWindow()
     {
         InitializeComponent();
+        SkinComboBox.PreviewMouseWheel += ComboBox_PreviewMouseWheel;
+        HitsoundComboBox.PreviewMouseWheel += ComboBox_PreviewMouseWheel;
         AutoDetectSkinFolder();
+    }
+
+    private void ComboBox_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
     }
 
     private void BrowseRoot_Click(object sender, RoutedEventArgs e)
@@ -197,33 +208,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void PreviewTrimmed_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAudioLoaded())
-        {
-            return;
-        }
-
-        if (IsAudioEmpty(_loadedAudio!))
-        {
-            SetStatus("This file is empty audio. Preview is not required.");
-            SetTrimAnalysisWarning("Empty audio detected. No trimming is required.");
-            return;
-        }
-
-        var trimmed = TrimToSliderRange(_loadedAudio!);
-        if (trimmed.Samples.Length == 0)
-        {
-            SetStatus("Preview range produced empty audio.");
-            return;
-        }
-
-        if (TryPlayAudio(trimmed, "Playing changed preview."))
-        {
-            SetStatus("Playing changed preview.");
-        }
-    }
-
     protected override void OnClosed(EventArgs e)
     {
         StopPlayback();
@@ -259,6 +243,7 @@ public partial class MainWindow : Window
 
         _isDraggingSelection = true;
         _dragStartX = e.GetPosition(WaveformCanvas).X;
+        _dragSelectionMode = GetDragSelectionMode(_dragStartX);
         WaveformCanvas.CaptureMouse();
         UpdateDragSelection(_dragStartX, _dragStartX);
     }
@@ -282,6 +267,7 @@ public partial class MainWindow : Window
         }
 
         _isDraggingSelection = false;
+        _dragSelectionMode = DragSelectionMode.None;
         WaveformCanvas.ReleaseMouseCapture();
         var endX = e.GetPosition(WaveformCanvas).X;
         UpdateDragSelection(_dragStartX, endX);
@@ -308,17 +294,47 @@ public partial class MainWindow : Window
             return;
         }
 
-        var savePath = PickSavePath("trimmed");
-        if (savePath is null)
+        if (string.IsNullOrWhiteSpace(_selectedFilePath) || !File.Exists(_selectedFilePath))
+        {
+            SetStatus("Selected file path is missing. Reload a hitsound and try again.");
+            return;
+        }
+
+        var targetPath = Path.ChangeExtension(_selectedFilePath, ".wav");
+        var originalBackupPath = Path.Combine(
+            Path.GetDirectoryName(targetPath)!,
+            $"{Path.GetFileNameWithoutExtension(targetPath)}_original.wav");
+
+        try
+        {
+            var originalAudio = ReadAudio(_selectedFilePath);
+            WriteWav(originalAudio, originalBackupPath);
+            WriteWav(trimmed, targetPath);
+
+            _selectedFilePath = targetPath;
+            SetStatus($"Trimmed WAV saved silently. Backup created: {Path.GetFileName(originalBackupPath)}");
+            PopulateAvailableHitsoundsForSelectedSkin(showActionPrompt: false, preserveSelection: true);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to save trimmed WAV: {ex.Message}");
+        }
+    }
+
+    private void ResetAudioRange_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureAudioLoaded())
         {
             return;
         }
 
-        WriteWav(trimmed, savePath);
-        SetStatus($"Trimmed WAV saved: {savePath}");
+        StartSlider.Value = 0;
+        EndSlider.Value = _loadedAudio!.DurationSeconds;
+        DrawWaveform();
+        SetStatus("Audio range reset to the full hitsound.");
     }
 
-    private void RemoveSilence_Click(object sender, RoutedEventArgs e)
+    private void AutoTrimLeadingLowAudio_Click(object sender, RoutedEventArgs e)
     {
         if (!EnsureAudioLoaded())
         {
@@ -327,26 +343,23 @@ public partial class MainWindow : Window
 
         if (IsAudioEmpty(_loadedAudio!))
         {
-            SetStatus("This file is empty audio. Silence removal is not required.");
+            SetStatus("This file is empty audio. Leading low-audio trim is not required.");
             SetTrimAnalysisWarning("Empty audio detected. There is nothing to trim at the start.");
             return;
         }
 
-        var trimmed = TrimLeadingSilence(_loadedAudio!, SilenceThreshold);
-        if (trimmed.Samples.Length == 0)
+        var startFrame = GetLeadingTrimStartFrame(_loadedAudio!);
+        if (startFrame < 0)
         {
-            SetStatus("Could not find non-silent content.");
+            SetStatus("Could not detect a strong onset for leading trim.");
             return;
         }
 
-        var savePath = PickSavePath("nosilence");
-        if (savePath is null)
-        {
-            return;
-        }
+        var startSeconds = startFrame / (double)_loadedAudio!.SampleRate;
+        StartSlider.Value = Math.Clamp(startSeconds, 0, EndSlider.Value);
+        DrawWaveform();
 
-        WriteWav(trimmed, savePath);
-        SetStatus($"Silence removed and WAV saved: {savePath}");
+        SetStatus("Leading relative low audio auto-trimmed. Drag the range if needed, then use Play Selected to preview.");
     }
 
     private void ConvertToWav_Click(object sender, RoutedEventArgs e)
@@ -690,33 +703,11 @@ public partial class MainWindow : Window
         {
             AnalysisBadge.Visibility = Visibility.Visible;
             AnalysisBadgeText.Text = actionCount.ToString();
-            AnalysisActionPopup.Visibility = Visibility.Visible;
-
-            var recommended = analysis.RecommendedItems.ToList();
-            var warning = analysis.WarningItems.ToList();
-
-            var lines = new List<string>();
-
-            if (recommended.Count > 0)
-            {
-                lines.Add("Recommended:");
-                lines.AddRange(recommended.Select(item => $"- {item.Label}"));
-            }
-
-            if (warning.Count > 0)
-            {
-                lines.Add("Warning:");
-                lines.AddRange(warning.Select(item => $"- {item.Label}"));
-            }
-
-            AnalysisActionPopupText.Text = string.Join("\n", lines);
             return;
         }
 
         AnalysisBadge.Visibility = Visibility.Collapsed;
         AnalysisBadgeText.Text = "0";
-        AnalysisActionPopup.Visibility = Visibility.Collapsed;
-        AnalysisActionPopupText.Text = "Action required";
     }
 
     private void AnalysisIssue_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -985,12 +976,56 @@ public partial class MainWindow : Window
         var minX = Math.Clamp(Math.Min(x1, x2), 0, width);
         var maxX = Math.Clamp(Math.Max(x1, x2), 0, width);
 
-        var start = (minX / width) * _loadedAudio.DurationSeconds;
-        var end = (maxX / width) * _loadedAudio.DurationSeconds;
+        switch (_dragSelectionMode)
+        {
+            case DragSelectionMode.AdjustStart:
+            {
+                var start = (Math.Clamp(x2, 0, width) / width) * _loadedAudio.DurationSeconds;
+                StartSlider.Value = Math.Clamp(start, 0, EndSlider.Value);
+                break;
+            }
+            case DragSelectionMode.AdjustEnd:
+            {
+                var end = (Math.Clamp(x2, 0, width) / width) * _loadedAudio.DurationSeconds;
+                EndSlider.Value = Math.Clamp(end, StartSlider.Value, _loadedAudio.DurationSeconds);
+                break;
+            }
+            default:
+            {
+                var start = (minX / width) * _loadedAudio.DurationSeconds;
+                var end = (maxX / width) * _loadedAudio.DurationSeconds;
 
-        StartSlider.Value = start;
-        EndSlider.Value = Math.Max(start, end);
+                StartSlider.Value = start;
+                EndSlider.Value = Math.Max(start, end);
+                break;
+            }
+        }
+
         DrawWaveform();
+    }
+
+    private DragSelectionMode GetDragSelectionMode(double cursorX)
+    {
+        if (_loadedAudio is null || _loadedAudio.DurationSeconds <= 0)
+        {
+            return DragSelectionMode.None;
+        }
+
+        var width = Math.Max(1, WaveformCanvas.ActualWidth);
+        var startX = (StartSlider.Value / _loadedAudio.DurationSeconds) * width;
+        var endX = (EndSlider.Value / _loadedAudio.DurationSeconds) * width;
+
+        if (Math.Abs(cursorX - startX) <= RangeHandleGrabPixels)
+        {
+            return DragSelectionMode.AdjustStart;
+        }
+
+        if (Math.Abs(cursorX - endX) <= RangeHandleGrabPixels)
+        {
+            return DragSelectionMode.AdjustEnd;
+        }
+
+        return DragSelectionMode.ReplaceRange;
     }
 
     private static float[] BuildWavePoints(AudioBuffer audio, int targetPointCount)
@@ -1044,26 +1079,43 @@ public partial class MainWindow : Window
         return SliceByFrame(audio, startFrame, endFrame);
     }
 
-    private static AudioBuffer TrimLeadingSilence(AudioBuffer audio, float threshold)
+    private static int GetLeadingTrimStartFrame(AudioBuffer audio)
+    {
+        var threshold = GetLeadingTrimThreshold(audio);
+        var first = FindFirstSignalFrame(audio, threshold);
+
+        if (first < 0)
+        {
+            return -1;
+        }
+
+        var preserveLeadInFrames = Math.Max(1, (int)(audio.SampleRate * 0.0005));
+        return Math.Max(0, first - preserveLeadInFrames);
+    }
+
+    private static int FindFirstSignalFrame(AudioBuffer audio, float threshold)
     {
         var frameCount = audio.Samples.Length / audio.Channels;
-        var first = -1;
-
         for (var frame = 0; frame < frameCount; frame++)
         {
             if (FrameHasSignal(audio, frame, threshold))
             {
-                first = frame;
-                break;
+                return frame;
             }
         }
 
-        if (first < 0)
+        return -1;
+    }
+
+    private static float GetLeadingTrimThreshold(AudioBuffer audio)
+    {
+        if (audio.Samples.Length == 0)
         {
-            return new AudioBuffer([], audio.SampleRate, audio.Channels);
+            return LeadingTrimAbsoluteFloor;
         }
 
-        return SliceByFrame(audio, first, frameCount);
+        var peak = audio.Samples.Max(sample => Math.Abs(sample));
+        return Math.Max(LeadingTrimAbsoluteFloor, peak * LeadingTrimRelativePeakFactor);
     }
 
     private static bool FrameHasSignal(AudioBuffer audio, int frame, float threshold)
@@ -1154,6 +1206,24 @@ public partial class MainWindow : Window
         }
     }
 
+    private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        SetPlaybackVolume((float)(e.NewValue / 100.0));
+        if (VolumePercentageTextBlock != null)
+        {
+            VolumePercentageTextBlock.Text = $"{(int)e.NewValue}%";
+        }
+    }
+
+    public void SetPlaybackVolume(float volume)
+    {
+        _playbackVolume = Math.Clamp(volume, 0f, 1f);
+        if (_playbackOutput != null)
+        {
+            _playbackOutput.Volume = _playbackVolume;
+        }
+    }
+
     private bool TryPlayAudioFromPath(string path, string failureContext, bool isTempSource = false)
     {
         try
@@ -1181,6 +1251,7 @@ public partial class MainWindow : Window
             _playbackOutput = new WaveOutEvent();
             _playbackOutput.Init(_playbackStream);
             _playbackOutput.PlaybackStopped += PlaybackOutput_PlaybackStopped;
+            _playbackOutput.Volume = _playbackVolume;
 
             _playbackOutput.Play();
             return true;
@@ -1332,11 +1403,11 @@ public partial class MainWindow : Window
 
         if (HasAudioAtStart(audio))
         {
-            SetTrimAnalysisSuccess("0ms already has audio. This hitsound is already perfect and does not need start trimming.");
+            SetTrimAnalysisSuccess("Onset starts near 0ms at a peak-relative threshold. This hitsound does not need start trimming.");
             return;
         }
 
-        SetTrimAnalysisDanger("Start silence detected. This hitsound allows trimming at the beginning.");
+        SetTrimAnalysisDanger("Leading low-level noise/silence detected before the main onset. Start trimming is recommended.");
     }
 
     private void SetTrimAnalysisSuccess(string message)
@@ -1386,19 +1457,18 @@ public partial class MainWindow : Window
 
     private static bool HasAudioAtStart(AudioBuffer audio)
     {
+        var threshold = GetLeadingTrimThreshold(audio);
+        var firstSignalFrame = FindFirstSignalFrame(audio, threshold);
+        if (firstSignalFrame < 0)
+        {
+            return false;
+        }
+
         var framesToCheck = Math.Min(
             (int)(audio.SampleRate * StartAudioWindowSeconds),
             Math.Max(1, audio.Samples.Length / Math.Max(1, audio.Channels)));
 
-        for (var frame = 0; frame < framesToCheck; frame++)
-        {
-            if (FrameHasSignal(audio, frame, SilenceThreshold))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return firstSignalFrame <= framesToCheck;
     }
 
     private sealed record SkinItem(string Path, string FolderName, string SkinName, string SkinAuthor, string DisplayLabel);
@@ -1434,5 +1504,13 @@ public partial class MainWindow : Window
             Channels == 0 || SampleRate == 0
                 ? 0
                 : Samples.Length / (double)(Channels * SampleRate);
+    }
+
+    private enum DragSelectionMode
+    {
+        None,
+        ReplaceRange,
+        AdjustStart,
+        AdjustEnd
     }
 }

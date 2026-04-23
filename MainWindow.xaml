@@ -370,7 +370,7 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
-    <Grid Margin="20" Background="{StaticResource WindowBackgroundBrush}">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -420,6 +420,7 @@
                     <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -487,7 +488,36 @@
                                         Click="OpenSkinFolder_Click" />
                             </WrapPanel>
 
-                            <TextBlock Grid.Row="2"
+                            <Grid Grid.Row="2" Margin="0,12,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Playback Volume"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0"
+                                           Foreground="{StaticResource TextBrush}" />
+                                <Slider Grid.Column="1"
+                                        x:Name="VolumeSlider"
+                                        Minimum="0"
+                                        Maximum="100"
+                                        Value="100"
+                                        TickPlacement="None"
+                                        IsSnapToTickEnabled="False"
+                                        ValueChanged="VolumeSlider_ValueChanged" />
+                                <TextBlock Grid.Column="2"
+                                           x:Name="VolumePercentageTextBlock"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0"
+                                           Foreground="{StaticResource SubtleTextBrush}"
+                                           Text="100%"
+                                           Width="40"
+                                           TextAlignment="Right" />
+                            </Grid>
+
+                            <TextBlock Grid.Row="3"
                                        x:Name="StatusTextBlock"
                                        Margin="0,2,0,0"
                                        FontWeight="SemiBold"
@@ -543,14 +573,14 @@
                             </StackPanel>
 
                             <WrapPanel Grid.Row="3">
-                                <Button Content="Preview Changes" Click="PreviewTrimmed_Click" />
                                 <Button Content="Save Trimmed WAV" Click="SaveTrimmed_Click" />
-                                <Button Content="Remove Leading Silence" Click="RemoveSilence_Click" />
+                                <Button Content="Trim Low Audio" Click="AutoTrimLeadingLowAudio_Click" />
+                                <Button Content="Reset Audio Range" Click="ResetAudioRange_Click" />
                                 <Button x:Name="ReplaceEmptyAudioButton"
-                                        Content="Replace as Empty Audio"
+                                        Content="Replace as Empty"
                                         IsEnabled="False"
                                         Click="ReplaceAsEmptyAudio_Click" />
-                                <Button Content="Convert All to WAV" Click="ConvertToWav_Click" />
+                                <Button Content="Convert to WAV" Click="ConvertToWav_Click" />
                             </WrapPanel>
                         </Grid>
                     </Border>
@@ -578,28 +608,7 @@
                 </TabItem.Header>
 
                 <Grid Margin="0,10,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <Border x:Name="AnalysisActionPopup"
-                            Grid.Row="0"
-                            HorizontalAlignment="Right"
-                            Visibility="Collapsed"
-                            Background="#FFE53935"
-                            CornerRadius="10"
-                            Padding="10,6"
-                            MaxWidth="420"
-                            Margin="0,0,0,10">
-                        <TextBlock x:Name="AnalysisActionPopupText"
-                                   Foreground="White"
-                                   FontWeight="Bold"
-                                   TextWrapping="Wrap"
-                                   Text="Action required" />
-                    </Border>
-
-                    <Grid Grid.Row="1">
+                    <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
